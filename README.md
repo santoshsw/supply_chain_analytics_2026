@@ -1,18 +1,17 @@
-# supply_chain_analytics_2026
 
 # 🏠 Supply Chain Analytics 2026 End-to-End Data Engineering Project
 
 ## 📋 Overview
 
-This project implements a complete end-to-end data engineering pipeline for Airbnb data using modern cloud technologies. The solution demonstrates best practices in data warehousing, transformation, and analytics using **Snowflake**, **dbt (Data Build Tool)**, and **Azure**.
+This project implements a complete end-to-end data engineering pipeline for Supply Chain Analytics 2026 data using modern cloud technologies. The solution demonstrates best practices in data warehousing, transformation, and analytics using **Snowflake**, **dbt (Data Build Tool)**, and **Azure**.
 
-The pipeline processes Airbnb listings, bookings, and hosts data through a medallion architecture (Bronze → Silver → Gold), implementing incremental loading, slowly changing dimensions (SCD Type 2), and creating analytics-ready datasets.
+The pipeline processes customers, line_items, orders, nations, regions, parts, part_suppliers and suppliers data through a medallion architecture (Bronze → Silver → Gold), implementing incremental loading, slowly changing dimensions (SCD Type 2), and creating analytics-ready datasets.
 
 ## 🏗️ Architecture
 
 ### Data Flow
 ```
-Source Data (CSV) → AWS S3 → Snowflake (Staging) → Bronze Layer → Silver Layer → Gold Layer
+Source Data (CSV) → Azure ADLS Gen2 → Snowflake (Staging) → Bronze Layer → Silver Layer → Gold Layer
                                                            ↓              ↓           ↓
                                                       Raw Tables    Cleaned Data   Analytics
 ```
@@ -21,7 +20,7 @@ Source Data (CSV) → AWS S3 → Snowflake (Staging) → Bronze Layer → Silver
 
 - **Cloud Data Warehouse**: Snowflake
 - **Transformation Layer**: dbt (Data Build Tool)
-- **Cloud Storage**: AWS S3 (implied)
+- **Cloud Storage**: Azure ADLS Gen2 (implied)
 - **Version Control**: Git
 - **Python**: 3.12+
 - **Key dbt Features**:
@@ -37,88 +36,114 @@ Source Data (CSV) → AWS S3 → Snowflake (Staging) → Bronze Layer → Silver
 
 #### 🥉 Bronze Layer (Raw Data)
 Raw data ingested from staging with minimal transformations:
-- `bronze_bookings` - Raw booking transactions
-- `bronze_hosts` - Raw host information
-- `bronze_listings` - Raw property listings
+- `bronze_customers` - Raw customers
+- `bronze_line_items` - Raw line_items
+- `bronze_orders` - Raw orders
+- `bronze_nations` - Raw nations
+- `bronze_regions` - Raw regions
+- `bronze_parts` - Raw parts
+- `bronze_part_suppliers` - Raw part_suppliers
+- `bronze_suppliers` - Raw suppliers
+
 
 #### 🥈 Silver Layer (Cleaned Data)
 Cleaned and standardized data:
-- `silver_bookings` - Validated booking records
-- `silver_hosts` - Enhanced host profiles with quality metrics
-- `silver_listings` - Standardized listing information with price categorization
+- `silver_customers__with_geography` -  
+- `silver_suppliers__with_geography` -  
+- `silver_orders__enriched` -  
+- `line_items__enriched` -
+- `order_items__aggregated` -
 
 #### 🥇 Gold Layer (Analytics-Ready)
 Business-ready datasets optimized for analytics:
-- `obt` (One Big Table) - Denormalized fact table joining bookings, listings, and hosts
-- `fact` - Fact table for dimensional modeling
-- Ephemeral models for intermediate transformations
+- `dim_suppliers` -  
+-  `dim_customers` -
+-  `dim_parts` -
+-  `dim_dates` -
+-  `fct_orders` -
+-  `fct_line_items` -
+-  `finance__revenue_by_segment` -
+-  `finance__order_profitability` -
+-  `supply_chain__supplier_performance` -
+-  `supply_chain__inventory_coverage` -
 
 ### Snapshots (SCD Type 2)
 Slowly Changing Dimensions to track historical changes:
-- `dim_bookings` - Historical booking changes
-- `dim_hosts` - Historical host profile changes
-- `dim_listings` - Historical listing changes
+- `snap_customers` - Historical customer changes
+- `snap_suppliers` - Historical supplier profile changes
+- `snap_part_supplier_costs` - Historical supplier parts changes
 
 ## 📁 Project Structure
 
 ```
-AWS_DBT_Snowflake/
-├── README.md                           # This file
-├── pyproject.toml                      # Python dependencies
-├── main.py                             # Main execution script
+supply_chain_analytics/
+├── dbt_project.yml                          # Project config, schema routing, materializations
+├── packages.yml                             # dbt_utils, dbt_expectations, audit_helper, codegen
+├── profiles.yml                             # dev / ci / prod Snowflake targets
 │
-├── SourceData/                         # Raw CSV data files
-│   ├── bookings.csv
-│   ├── hosts.csv
-│   └── listings.csv
+├── models/
+│   ├── staging/
+│   │   ├── _sources.yml                     # Source definitions + source tests
+│   │   ├── _staging__models.yml             # Staging column tests
+│   │   ├── stg__customers.sql          # VIEW
+│   │   ├── stg__line_items.sql         # VIEW
+│   │   ├── stg__orders.sql             # VIEW
+│   │   ├── stg__nations.sql            # VIEW
+│   │   ├── stg__regions.sql            # VIEW
+│   │   ├── stg__parts.sql              # VIEW
+│   │   ├── stg__part_suppliers.sql     # VIEW
+│   │   └── stg__suppliers.sql          # VIEW
+│   │
+│   ├── intermediate/
+│   │   ├── _intermediate__models.yml
+│   │   ├── int_customers__with_geography.sql     # EPHEMERAL
+│   │   ├── int_suppliers__with_geography.sql     # EPHEMERAL
+│   │   ├── int_orders__enriched.sql              # EPHEMERAL
+│   │   ├── int_line_items__enriched.sql          # EPHEMERAL
+│   │   └── int_order_items__aggregated.sql       # EPHEMERAL
+│   │
+│   └── marts/
+│       ├── core/
+│       │   ├── _core__models.yml
+│       │   ├── dim_customers.sql            # TABLE
+│       │   ├── dim_suppliers.sql            # TABLE
+│       │   ├── dim_parts.sql                # TABLE
+│       │   ├── dim_dates.sql                # TABLE (date_spine)
+│       │   ├── fct_orders.sql               # INCREMENTAL — delete+insert
+│       │   └── fct_line_items.sql           # INCREMENTAL — merge
+│       ├── finance/
+│       │   ├── _finance__models.yml
+│       │   ├── finance__revenue_by_segment.sql
+│       │   └── finance__order_profitability.sql
+│       └── supply_chain/
+│           ├── supply_chain__supplier_performance.sql
+│           └── supply_chain__inventory_coverage.sql
 │
-├── DDL/                                # Database schema definitions
-│   ├── ddl.sql                         # Table creation scripts
-│   └── resources.sql
+├── snapshots/
+│   ├── snp_customers.sql                    # SCD Type-2, check strategy
+│   ├── snp_suppliers.sql                    # SCD Type-2, check strategy
+│   └── snp_part_supplier_costs.sql          # SCD Type-2, check strategy
 │
-└── aws_dbt_snowflake_project/         # Main dbt project
-    ├── dbt_project.yml                 # dbt project configuration
-    ├── ExampleProfiles.yml             # Snowflake connection profile
-    │
-    ├── models/                         # dbt models
-    │   ├── sources/
-    │   │   └── sources.yml             # Source definitions
-    │   ├── bronze/                     # Raw data layer
-    │   │   ├── bronze_bookings.sql
-    │   │   ├── bronze_hosts.sql
-    │   │   └── bronze_listings.sql
-    │   ├── silver/                     # Cleaned data layer
-    │   │   ├── silver_bookings.sql
-    │   │   ├── silver_hosts.sql
-    │   │   └── silver_listings.sql
-    │   └── gold/                       # Analytics layer
-    │       ├── fact.sql
-    │       ├── obt.sql
-    │       └── ephemeral/              # Temporary models
-    │           ├── bookings.sql
-    │           ├── hosts.sql
-    │           └── listings.sql
-    │
-    ├── macros/                         # Reusable SQL functions
-    │   ├── generate_schema_name.sql    # Custom schema naming
-    │   ├── multiply.sql                # Math operations
-    │   ├── tag.sql                     # Categorization logic
-    │   └── trimmer.sql                 # String utilities
-    │
-    ├── analyses/                       # Ad-hoc analysis queries
-    │   ├── explore.sql
-    │   ├── if_else.sql
-    │   └── loop.sql
-    │
-    ├── snapshots/                      # SCD Type 2 configurations
-    │   ├── dim_bookings.yml
-    │   ├── dim_hosts.yml
-    │   └── dim_listings.yml
-    │
-    ├── tests/                          # Data quality tests
-    │   └── source_tests.sql
-    │
-    └── seeds/                          # Static reference data
+├── macros/
+│   ├── generate_schema_name.sql             # prod vs dev schema isolation
+│   ├── test_helpers.sql                     # 6 custom generic test macros
+│   ├── incremental_helpers.sql              # get_max_watermark, incremental_lookback
+│   ├── pivot_helpers.sql                    # pivot_revenue_by_segment, union_relations
+│   ├── date_helpers.sql                     # date_trunc_to_period, fiscal_year
+│   ├── safe_divide.sql
+│   └── cents_to_dollars.sql
+│
+├── tests/
+│   ├── generic/_generic_tests.yml           # Schema-level tests on mart models
+│   └── singular/
+│       ├── test_revenue_consistency.sql
+│       ├── test_no_orphaned_line_items.sql
+│       ├── test_scd2_no_overlapping_periods.sql
+│       ├── test_supplier_performance_score_bounds.sql
+│       └── test_date_spine_completeness.sql
+│
+└── analyses/
+    └── tpch_q1_pricing_summary.sql          # Official supply_chain_analytics benchmark Q1
 ```
 
 ## 🚀 Getting Started
@@ -131,14 +156,14 @@ AWS_DBT_Snowflake/
    - Python 3.12 or higher
    - pip or uv package manager
 
-3. **AWS Account (will create one if doesn't exist) ** (for S3 storage)
+3. **Aazure ADLS Account (will create one if doesn't exist) ** (for ADLS Gen2)
 
 ### Installation
 
 1. **Clone the Repository**
    ```bash
    git clone <repository-url>
-   cd AWS_DBT_Snowflake
+   cd supply_chain_analytics
    ```
 
 2. **Create Virtual Environment**
@@ -165,11 +190,11 @@ AWS_DBT_Snowflake/
    
    Create `~/.dbt/profiles.yml`:
    ```yaml
-   aws_dbt_snowflake_project:
+   supply_chain_analytics:
      outputs:
        dev:
          account: <your-account-identifier>
-         database: AIRBNB
+         database: analytics
          password: <your-password>
          role: ACCOUNTADMIN
          schema: dbt_schema
@@ -189,10 +214,6 @@ AWS_DBT_Snowflake/
 
 6. **Load Source Data**
    
-   Load CSV files from `SourceData/` to Snowflake staging schema:
-   - `bookings.csv` → `AIRBNB.STAGING.BOOKINGS`
-   - `hosts.csv` → `AIRBNB.STAGING.HOSTS`
-   - `listings.csv` → `AIRBNB.STAGING.LISTINGS`
 
 ## 🔧 Usage
 
@@ -241,75 +262,6 @@ AWS_DBT_Snowflake/
    ```bash
    dbt build  # Runs models, tests, and snapshots
    ```
-
-## 🎯 Key Features
-
-### 1. Incremental Loading
-Bronze and silver models use incremental materialization to process only new/changed data:
-```sql
-{{ config(materialized='incremental') }}
-{% if is_incremental() %}
-    WHERE CREATED_AT > (SELECT COALESCE(MAX(CREATED_AT), '1900-01-01') FROM {{ this }})
-{% endif %}
-```
-
-### 2. Custom Macros
-Reusable business logic:
-- **`tag()` macro**: Categorizes prices into 'low', 'medium', 'high'
-  ```sql
-  {{ tag('CAST(PRICE_PER_NIGHT AS INT)') }} AS PRICE_PER_NIGHT_TAG
-  ```
-
-### 3. Dynamic SQL Generation
-The OBT (One Big Table) model uses Jinja loops for maintainable joins:
-```sql
-{% set configs = [...] %}
-SELECT {% for config in configs %}...{% endfor %}
-```
-
-### 4. Slowly Changing Dimensions
-Track historical changes with timestamp-based snapshots:
-- Valid from/to dates automatically maintained
-- Historical data preserved for point-in-time analysis
-
-### 5. Schema Organization
-Automatic schema separation by layer:
-- Bronze models → `AIRBNB.BRONZE.*`
-- Silver models → `AIRBNB.SILVER.*`
-- Gold models → `AIRBNB.GOLD.*`
-
-## 📈 Data Quality
-
-### Testing Strategy
-- Source data validation tests
-- Unique key constraints
-- Not null checks
-- Referential integrity tests
-- Custom business rule tests
-
-### Data Lineage
-dbt automatically tracks data lineage, showing:
-- Upstream dependencies
-- Downstream impacts
-- Model relationships
-- Source to consumption flow
-
-## 🔐 Security & Best Practices
-
-1. **Credentials Management**
-   - Never commit `profiles.yml` with credentials
-   - Use environment variables for sensitive data
-   - Implement role-based access control (RBAC) in Snowflake
-
-2. **Code Quality**
-   - SQL formatting with `sqlfmt`
-   - Version control with Git
-   - Code reviews for model changes
-
-3. **Performance Optimization**
-   - Incremental models for large datasets
-   - Ephemeral models for intermediate transformations
-   - Appropriate clustering keys in Snowflake
 
 ## 📚 Additional Resources
 
