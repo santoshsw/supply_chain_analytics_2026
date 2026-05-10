@@ -1,0 +1,147 @@
+version: 2
+
+models:
+  - name: stg__customers
+    description: Cleaned and renamed customer records.
+    columns:
+      - name: customer_key
+        tests: [unique, not_null]
+      - name: customer_name
+        tests: [not_null]
+      - name: nation_key
+        tests: [not_null]
+      - name: market_segment
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['AUTOMOBILE', 'BUILDING', 'FURNITURE', 'HOUSEHOLD', 'MACHINERY']
+      - name: account_balance
+        tests: [not_null]
+      - name: phone_number
+        tests: [not_null]
+
+  - name: stg__line_items
+    description: Cleaned line-item records. Incremental append on ship_date.
+    columns:
+      - name: order_item_key
+        tests: [unique, not_null]
+      - name: order_key
+        tests: [not_null]
+      - name: line_number
+        tests: [not_null]
+      - name: part_key
+        tests: [not_null]
+      - name: supplier_key
+        tests: [not_null]
+      - name: quantity
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+              max_value: 50
+      - name: extended_price
+        tests: [not_null]
+      - name: discount_pct
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 0.1
+              inclusive: true
+      - name: return_flag
+        tests:
+          - accepted_values:
+              values: ['A', 'N', 'R']
+      - name: line_status
+        tests:
+          - accepted_values:
+              values: ['O', 'F']
+      - name: ship_date
+        tests: [not_null]
+
+  - name: stg__nations
+    description: Reference — 25 nations.
+    columns:
+      - name: nation_key
+        tests: [unique, not_null]
+      - name: nation_name
+        tests: [unique, not_null]
+      - name: region_key
+        tests: [not_null]
+
+  - name: stg__orders
+    description: Order header records. Incremental merge on order_key.
+    columns:
+      - name: order_key
+        tests: [unique, not_null]
+      - name: customer_key
+        tests: [not_null]
+      - name: order_status
+        tests:
+          - accepted_values:
+              values: ['O', 'F', 'P']
+      - name: total_price
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
+      - name: order_date
+        tests: [not_null]
+
+  - name: stg__parts
+    description: Parts catalog, renamed and typed.
+    columns:
+      - name: part_key
+        tests: [unique, not_null]
+      - name: part_name
+        tests: [not_null]
+      - name: manufacturer
+        tests: [not_null]
+      - name: brand
+        tests: [not_null]
+      - name: retail_price
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
+
+  - name: stg__part_suppliers
+    description: Part-supplier associations with cost and availability.
+    columns:
+      - name: part_supplier_key
+        tests: [unique, not_null]
+      - name: part_key
+        tests: [not_null]
+      - name: supplier_key
+        tests: [not_null]
+      - name: available_quantity
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: supply_cost
+        tests: [not_null]
+
+  - name: stg__regions
+    description: Reference — 5 global regions.
+    columns:
+      - name: region_key
+        tests: [unique, not_null]
+      - name: region_name
+        tests: [unique, not_null]
+
+  - name: stg__suppliers
+    description: Supplier records, renamed and cleaned.
+    columns:
+      - name: supplier_key
+        tests: [unique, not_null]
+      - name: supplier_name
+        tests: [not_null]
+      - name: nation_key
+        tests: [not_null]
+      - name: account_balance
+        tests: [not_null]
+      - name: phone_number
+        tests: [not_null]

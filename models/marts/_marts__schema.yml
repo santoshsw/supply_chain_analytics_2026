@@ -1,0 +1,92 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: SCD Type-1 customer dimension, current state, enriched with geography.
+    columns:
+      - name: customer_key
+        tests: [unique, not_null]
+      - name: customer_surrogate_key
+        tests: [unique, not_null]
+      - name: customer_name
+        tests: [not_null]
+      - name: market_segment
+        tests:
+          - accepted_values:
+              values: ['AUTOMOBILE', 'BUILDING', 'FURNITURE', 'HOUSEHOLD', 'MACHINERY']
+      - name: nation_name
+        tests: [not_null]
+      - name: region_name
+        tests: [not_null]
+
+  - name: dim_suppliers
+    description: Supplier dimension with geographic hierarchy.
+    columns:
+      - name: supplier_key
+        tests: [unique, not_null]
+      - name: supplier_name
+        tests: [not_null]
+
+  - name: dim_parts
+    description: Parts catalog dimension.
+    columns:
+      - name: part_key
+        tests: [unique, not_null]
+      - name: part_name
+        tests: [not_null]
+      - name: retail_price
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
+
+  - name: dim_dates
+    description: Calendar date spine covering 1992-01-01 to 1998-12-31.
+    columns:
+      - name: date_key
+        tests: [unique, not_null]
+
+  - name: fct_orders
+    description: >
+      Order-grain fact table with pre-aggregated line item stats.
+      INCREMENTAL delete+insert strategy handles order status updates.
+    columns:
+      - name: order_key
+        tests: [unique, not_null]
+      - name: customer_key
+        tests: [not_null]
+      - name: order_date
+        tests: [not_null]
+      - name: total_net_revenue
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: return_rate
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+
+  - name: fct_line_items
+    description: >
+      Atomic financial fact. One row per order line item.
+      Clustered by ship_date, order_key. Incremental merge.
+    columns:
+      - name: order_item_key
+        tests: [unique, not_null]
+      - name: order_key
+        tests: [not_null]
+      - name: part_key
+        tests: [not_null]
+      - name: supplier_key
+        tests: [not_null]
+      - name: net_price
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: gross_margin
+        description: Net price minus (supply_cost x quantity).
+        tests: [not_null]
