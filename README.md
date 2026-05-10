@@ -277,32 +277,6 @@ supply_chain_analytics/
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
-
-This project is part of a data engineering portfolio demonstration.
-
-## 👤 Author
-
-**Project**: Airbnb Data Engineering Pipeline  
-**Technologies**: Snowflake, dbt, AWS, Python
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Connection Error**
-   - Verify Snowflake credentials in `profiles.yml`
-   - Check network connectivity
-   - Ensure warehouse is running
-
-2. **Compilation Error**
-   - Run `dbt debug` to check configuration
-   - Verify model dependencies
-   - Check Jinja syntax
-
-3. **Incremental Load Issues**
-   - Run `dbt run --full-refresh` to rebuild from scratch
-   - Verify source data timestamps
 
 ## 📊 Future Enhancements
 
