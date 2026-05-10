@@ -1,5 +1,5 @@
 
-# 🏠 Supply Chain Analytics 2026 End-to-End Data Engineering Project
+# 🏠 Supply Chain Analytics dbt+snowflake project 2026
 
 ## 📋 Overview
 
