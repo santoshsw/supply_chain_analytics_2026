@@ -1,0 +1,57 @@
+
+
+name: 'supply_chain_analytics'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'default'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"  # directory which will store compiled SQL files
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+
+
+models:
+  supply_chain_analytics:
+    staging:
+      +materialized: view
+      +schema: bronze
+      +tags: ["staging"]
+ 
+    intermediate:
+      +materialized: view
+      +schema: silver
+      +tags: ["intermediate"]
+ 
+    marts:
+      +materialized: table
+      +schema: gold
+      +tags: ["marts"]
+      core:
+        +schema: marts_core
+        +tags: ["core"]
+      finance:
+        +schema: marts_finance
+        +tags: ["finance"]
+      supply_chain:
+        +schema: marts_supply_chain
+        +tags: ["supply_chain"]
+
+
+# ─────────────────────────────────────────────
+# Snapshot defaults
+# ─────────────────────────────────────────────
+snapshots:
+  supply_chain_analytics:
+    +target_schema: snapshots
+    +strategy: timestamp
+    +invalidate_hard_deletes: true

@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: int_orders__enriched
+    description: Orders joined to customers and geography. Ephemeral.
+
+  - name: int_line_items__enriched
+    description: Line items joined to orders, parts, and suppliers. Core financial grain. Ephemeral.
+
+  - name: int_suppliers__with_geography
+    description: Suppliers enriched with nation and region. Ephemeral.
+
+  - name: int_customers__with_geography
+    description: Customers enriched with nation and region. Ephemeral.
+
+  - name: int_order_items__aggregated
+    description: Pre-aggregated order-level line item stats. Reduces repeated aggregation across marts. Ephemeral.

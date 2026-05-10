@@ -1,0 +1,128 @@
+version: 2
+
+sources:
+  - name: landing
+    description: >
+      TPC-H benchmark dataset hosted in Snowflake's built-in sample data.
+      Scale factor 1 (~1GB raw). Used as the foundational source for this
+      enterprise dbt project.
+    database: SNOWFLAKE_SAMPLE_DATA
+    schema: TPCH_SF1
+
+    tables:
+
+      - name: customer
+        description: All TPC-H customers.
+        columns:
+          - name: C_CUSTKEY
+            description: Primary key — unique customer identifier.
+            tests: [unique, not_null]
+          - name: C_NAME
+            tests: [not_null]
+          - name: C_NATIONKEY
+            description: FK → nation.N_NATIONKEY
+            tests: [not_null]
+          - name: C_MKTSEGMENT
+            tests: [not_null]
+          - name: C_ACCTBAL
+            tests: [not_null]
+
+      - name: lineitem
+        description: >
+          Order line items — the largest table in TPC-H (~6M rows at SF1).
+          Each row represents one product on one order.
+        columns:
+          - name: L_ORDERKEY
+            description: FK → orders.O_ORDERKEY
+            tests: [not_null]
+          - name: L_LINENUMBER
+            tests: [not_null]
+          - name: L_PARTKEY
+            tests: [not_null]
+          - name: L_SUPPKEY
+            tests: [not_null]
+          - name: L_QUANTITY
+            tests: [not_null]
+          - name: L_EXTENDEDPRICE
+            tests: [not_null]
+          - name: L_RETURNFLAG
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['A', 'N', 'R']
+          - name: L_LINESTATUS
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['O', 'F']
+          - name: L_SHIPDATE
+            tests: [not_null]
+
+      - name: nation
+        description: Reference table — 25 nations.
+        columns:
+          - name: N_NATIONKEY
+            tests: [unique, not_null]
+          - name: N_NAME
+            tests: [unique, not_null]
+          - name: N_REGIONKEY
+            tests: [not_null]
+
+      - name: orders
+        description: Customer orders header (~1.5M rows at SF1).
+        columns:
+          - name: O_ORDERKEY
+            tests: [unique, not_null]
+          - name: O_CUSTKEY
+            tests: [not_null]
+          - name: O_ORDERSTATUS
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['O', 'F', 'P']
+          - name: O_ORDERDATE
+            tests: [not_null]
+          - name: O_TOTALPRICE
+            tests: [not_null]
+
+      - name: part
+        description: Parts catalog (~200K rows at SF1).
+        columns:
+          - name: P_PARTKEY
+            tests: [unique, not_null]
+          - name: P_NAME
+            tests: [not_null]
+          - name: P_RETAILPRICE
+            tests: [not_null]
+
+      - name: partsupp
+        description: Part–supplier relationship (~800K rows at SF1).
+        columns:
+          - name: PS_PARTKEY
+            tests: [not_null]
+          - name: PS_SUPPKEY
+            tests: [not_null]
+          - name: PS_AVAILQTY
+            tests: [not_null]
+          - name: PS_SUPPLYCOST
+            tests: [not_null]
+
+      - name: region
+        description: Reference table — 5 regions.
+        columns:
+          - name: R_REGIONKEY
+            tests: [unique, not_null]
+          - name: R_NAME
+            tests: [unique, not_null]
+
+      - name: supplier
+        description: Suppliers (~10K rows at SF1).
+        columns:
+          - name: S_SUPPKEY
+            tests: [unique, not_null]
+          - name: S_NAME
+            tests: [not_null]
+          - name: S_NATIONKEY
+            tests: [not_null]
+          - name: S_ACCTBAL
+            tests: [not_null]
